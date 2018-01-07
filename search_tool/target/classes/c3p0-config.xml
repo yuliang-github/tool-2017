@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE server>
+
+<c3p0-config>  
+    <default-config>  
+        <property name="driverClass">com.mysql.jdbc.Driver</property>  
+        <property name="jdbcUrl">jdbc:mysql://prod-mysql-readonly1.cofh1myagdtp.rds.cn-north-1.amazonaws.com.cn/ALA_ONION</property>  
+        <property name="user">allen</property>  
+        <property name="password">fU9yBW4pXIJ2vZIz</property>  
+          
+        <property name="initialPoolSize">10</property>  
+        <property name="maxIdleTime">30</property>  
+        <property name="maxPoolSize">20</property>  
+        <property name="minPoolSize">5</property>  
+        <property name="maxStatements">200</property>  
+    </default-config>  
+      
+    <named-config name="in_line">  
+        <property name="driverClass">com.mysql.jdbc.Driver</property>  
+        <property name="jdbcUrl">jdbc:mysql://prod-mysql-readonly1.cofh1myagdtp.rds.cn-north-1.amazonaws.com.cn/ALA_ONION</property>  
+        <property name="user">allen</property>  
+        <property name="password">fU9yBW4pXIJ2vZIz</property>  
+          
+        <property name="initialPoolSize">10</property>  
+        <property name="maxIdleTime">30</property>  
+        <property name="maxPoolSize">20</property>  
+        <property name="minPoolSize">5</property>  
+        <property name="maxStatements">200</property>  
+    </named-config>  
+      
+    <named-config name="oracle">  
+        <property name="acquireIncrement">50</property>  
+        <property name="initialPoolSize">100</property>  
+        <property name="minPoolSize">50</property>  
+        <property name="maxPoolSize">1000</property><!-- intergalactoApp adopts a different approach to configuring statement caching -->  
+        <property name="maxStatements">0</property>  
+        <property name="maxStatementsPerConnection">5</property>  
+    </named-config>  
+</c3p0-config>  
+
+   
