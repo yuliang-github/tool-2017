@@ -15,10 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -26,12 +31,17 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;
 
+import com.ala.search.pojo.RecalledUser;
 import com.ala.search.pojo.UserBillPojo;
 import com.ala.search.pojo.UserBuyPojo;
 import com.ala.search.pojo.UserBuyTotalPojo;
+import com.ala.search.pojo.UserHLPojo;
 import com.ala.search.pojo.UserInvestPojo;
 import com.ala.search.pojo.UserPojo;
+import com.ala.search.pojo.UserPrizePojo;
 import com.ala.search.pojo.UserRankPojo;
+import com.ala.search.pojo.UserRecallPojo;
+import com.ala.thread.UserRecallTask;
 import com.ala.tool.ExcelGenerator;
 import com.ala.tool.ExcelReader;
 import com.ala.utils.JDBCUtils;
@@ -220,6 +230,109 @@ public class SearchTest {
 				+ "where t.UserId = b.Id and t.rate >= ?";
 		String[] headers = {"用户ID","姓名","手机号码","性别","年化利率","累计投资","洋葱收益","其它收益"};
 		ExcelGenerator.generate("最终排名榜",headers,UserBillPojo.class,"/Users/alex/Public/1-02年度账单取数.xlsx",sql,10);
+	}
+	
+	@Test
+	public void test17() throws SQLException,FileNotFoundException{
+		String sql = "select t1.*,ifnull(t2.rate,0.00) rate,t2.Cellphone,ifnull(t2.accInvest,0.00) accInvest "
+				+ "from (select userId,name,mobile,address from T_ACTIVITY_BILL_SHARING "
+				+ "where to_days(Ct) between to_days('2018-01-15') and to_days('2018-01-21') "
+				+ "and isWinPrize = 1) t1 left join "
+				+ "(select b.id UserId,b.Name,b.Cellphone,b.Sex,t.rate rate,t.accInvest accInvest,"
+				+ "t.onionProfit onionProfit,t.interestProfit interestProfit from "
+				+ "(select UserId,truncate(AccInvest,2) accInvest,truncate(AccOnionProfit,2) "
+				+ "onionProfit,truncate(AccInterestProfit,2) interestProfit,truncate(DailyInvest,2) "
+				+ "dailyInvest,truncate(if(DailyInvest = 0,if((AccOnionProfit+AccInterestProfit) = 0,0.00,100),"
+				+ "(AccOnionProfit+AccInterestProfit)/DailyInvest*100),2) rate,ProfitDays profitDays "
+				+ "from T_USER_ANNUAL_BILL) t right join "
+				+ "T_USER_BASIC b on t.UserId = b.Id) t2 on t1.userId = t2.UserId;";
+		String[] headers = {"用户ID","年化利率","累计投资","手机号","收货人","收货手机","收货地址"};
+		ExcelGenerator.generate("activity",headers,UserPrizePojo.class,"/Users/alex/Public/1-22年度账单取数.xlsx",sql);
+	}
+	
+	@Test
+	public void test18() throws SQLException,FileNotFoundException{
+		String sql = "select t1.*,t2.money,t2.buyTime from "
+				+ "(select b.Id,b.Name,b.Cellphone,b.Ct from T_USER_BASIC b right join"
+				+ "(select UserId from T_USER_BASIC_EXT where Source = 'H5ty_Hello') t "
+				+ "on b.Id = t.UserId) t1 left join(select Uid,ifnull(sum(InitBuy-DropoutMoney),0) money,"
+				+ "min(BuyTime) buyTime from T_PRODUCT_BUY where DirectInvest = 1 group by Uid) "
+				+ "t2 on t1.Id = t2.uid;";
+		String[] headers = {"用户ID","姓名","手机号","累计投资额","注册时间","投资时间"};
+		ExcelGenerator.generate("hello-kitty",headers,UserHLPojo.class,"/Users/alex/Public/1-08Hello-kitty取数.xlsx",sql);
+	}
+	
+	
+	@Test
+	public void test19() throws SQLException,FileNotFoundException, InterruptedException{
+		String sql = "select UserId,UpUserId from T_ACTIVITY_RECALL_USER where IsTargetUser =1;";
+		QueryRunner qr = new QueryRunner(JDBCUtils.getDataSource());
+		List<UserRecallPojo> users = qr.query(sql,new BeanListHandler<>(UserRecallPojo.class));
+		
+		int pages = 0;
+		if(users.size() % UserRecallTask.pageSize == 0){
+			pages = users.size()/UserRecallTask.pageSize;
+		}else{
+			pages = users.size()/UserRecallTask.pageSize + 1;
+		}
+		
+		CountDownLatch latch = new CountDownLatch(pages);
+		ExecutorService es = Executors.newFixedThreadPool(pages);
+		for(int i=1;i<=pages;i++){
+			UserRecallTask task = new UserRecallTask(users, i, latch);
+			es.submit(task);
+		}
+		es.shutdown();
+		latch.await();
+		String[] headers = {"用户ID","姓名","手机号","历史最高投资","当前投资","上级UID","上级姓名","上级手机号"};
+		
+		ExcelGenerator<UserRecallPojo> excel = new ExcelGenerator<>();
+		excel.generateByList("recall-users",headers,users,"/Users/alex/Public/1-15召回活动取数.xlsx");
+		
+	}
+	
+	@Test
+	public void test20(){
+		List<Integer> list = new ArrayList<Integer>();
+		
+		list.add(1);
+		list.add(2);
+		list.add(3);
+		list.add(4);
+		list.add(5);
+		
+		Iterator<Integer> it = list.iterator();
+		while(it.hasNext()){
+			Integer i = it.next();
+			if(i.intValue() > 3){
+				it.remove();
+			}
+		}
+		System.err.println(list);
+	}
+	
+	@Test
+	public void test21() throws SQLException{
+		String sql1 = "select UserId,UpUserId from T_ACTIVITY_RECALL_USER where Recalled = 1 order by UpUserId";
+		String sql2 = "select Name,Cellphone from T_USER_BASIC where Id = ?";
+		String sql3 = "select sum(QueueMoney+ReinvestMoney+Money) nowInvest from T_SYT_ACCOUNT_HUOQI where Uid = ?";
+		QueryRunner qr = new QueryRunner(JDBCUtils.getDataSource());
+		List<RecalledUser> users = qr.query(sql1,new BeanListHandler<>(RecalledUser.class));
+		for (RecalledUser user : users) {
+			Object[] ret1 = qr.query(sql2,new ArrayHandler(),user.getUserId());
+			user.setName(String.valueOf(ret1[0]));
+			user.setCellphone(String.valueOf(ret1[1]));
+			
+			Object[] ret2 = qr.query(sql2,new ArrayHandler(),user.getUpUserId());
+			user.setUpName(String.valueOf(ret2[0]));
+			user.setUpCellphone(String.valueOf(ret2[1]));
+			
+			Object money = qr.query(sql3,new ScalarHandler<>(),user.getUserId());
+			user.setMoney((BigDecimal)money);
+		}
+		String[] headers = {"用户ID","姓名","手机号","当前投资额","上级UID","上级姓名","上级手机号"};
+		ExcelGenerator<RecalledUser> excel = new ExcelGenerator<>();
+		excel.generateByList("recalled-users",headers,users,"/Users/alex/Public/1-18-02召回活动取数.xlsx");
 	}
 	
 }

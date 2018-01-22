@@ -1,9 +1,8 @@
 package com.ala.test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.Date;
+import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -13,6 +12,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+
+import com.ala.search.pojo.UserRankPojo;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 
 public class Demo {
 	
@@ -60,14 +64,28 @@ public class Demo {
 		System.out.println("程序运行结束");
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void test02() {
-		List<String> list = new ArrayList<>(2);
-		list.add("01");
-		list.add("02");
-		list.add("03");
-		String s = null;
-		Optional<String> ofNullable = Optional.ofNullable(s);
-		System.err.println(list);
+		UserRankPojo pojo = new UserRankPojo();
+		pojo.setCellphone("123");
+		pojo.setLastinvesttime(new Date());
+		//pojo.setMoney(BigDecimal.ZERO);
+		pojo.setRank(1);
+		//pojo.setUserid(567890L);
+		String string = JSON.toJSONString(pojo);
+		System.out.println(string);
+		
+		String str = "{lastinvesttime:1515492895029,money:0,rank:1,userid:567890}";
+		JSONObject jsonObject = JSON.parseObject(str);
+		UserRankPojo javaObject = JSON.toJavaObject(jsonObject,UserRankPojo.class);
+		System.err.println(javaObject);
+		
+		Map map = JSON.parseObject(str,new TypeReference<Map>(){});
+		System.out.println(map);
+		
+		UserRankPojo mapa = JSON.parseObject(str,new TypeReference<UserRankPojo>(){});
+		System.out.println(mapa);
+		
 	}
 }

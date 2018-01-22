@@ -59,4 +59,10 @@ public class UserRankPojo {
 		this.lastinvesttime = lastinvesttime;
 	}
 
+	@Override
+	public String toString() {
+		return "UserRankPojo [userid=" + userid + ", cellphone=" + cellphone + ", money=" + money + ", rank=" + rank
+				+ ", lastinvesttime=" + lastinvesttime + "]";
+	}
+
 }
