@@ -1,24 +1,10 @@
 package com.ala.search;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import com.ala.search.pojo.*;
+import com.ala.thread.UserRecallTask;
+import com.ala.tool.ExcelGenerator;
+import com.ala.tool.ExcelReader;
+import com.ala.utils.JDBCUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -31,20 +17,18 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;
 
-import com.ala.search.pojo.RecalledUser;
-import com.ala.search.pojo.UserBillPojo;
-import com.ala.search.pojo.UserBuyPojo;
-import com.ala.search.pojo.UserBuyTotalPojo;
-import com.ala.search.pojo.UserHLPojo;
-import com.ala.search.pojo.UserInvestPojo;
-import com.ala.search.pojo.UserPojo;
-import com.ala.search.pojo.UserPrizePojo;
-import com.ala.search.pojo.UserRankPojo;
-import com.ala.search.pojo.UserRecallPojo;
-import com.ala.thread.UserRecallTask;
-import com.ala.tool.ExcelGenerator;
-import com.ala.tool.ExcelReader;
-import com.ala.utils.JDBCUtils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SearchTest {
 	
