@@ -65,4 +65,6 @@ public class UserRankPojo {
 				+ ", lastinvesttime=" + lastinvesttime + "]";
 	}
 
+
+
 }
